@@ -29,4 +29,4 @@
   tags:
     - web
   roles:
-    - role: wordpress
+    - role: "{{ playbook_dir }}"

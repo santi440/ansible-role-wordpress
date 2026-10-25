@@ -1,0 +1,33 @@
+---
+galaxy_info:
+  namespace: santi
+  role_name: wordpress
+  author: Santiago
+  description: >-
+    Instala y configura WordPress con Apache y PHP sobre Debian, Ubuntu,
+    Rocky Linux y CentOS/RHEL, con parámetros para la base de datos, el
+    virtual host, PHP y SELinux.
+  company: Mikroways (capacitación)
+  license: GPL-2.0-or-later
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+        - noble
+    - name: EL
+      versions:
+        - "8"
+        - "9"
+  galaxy_tags:
+    - wordpress
+    - apache
+    - php
+    - web
+    - cms
+dependencies: []
