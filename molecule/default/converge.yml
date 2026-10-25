@@ -1,0 +1,16 @@
+---
+# En molecule los contenedores se manejan con la conexión
+# community.docker.docker, que ejecuta los comandos como root. Por eso no se
+# usa "become": en hosts reales el role se ejecuta con become y usuario
+# administrador (ver site.yml).
+- name: Converge - base de datos
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: geerlingguy.mysql
+
+- name: Converge - WordPress
+  hosts: all
+  gather_facts: true
+  roles:
+    - role: wordpress

@@ -1,0 +1,66 @@
+---
+name: wordpress-iac
+
+services:
+  wp-debian12:
+    image: geerlingguy/docker-debian12-ansible:latest
+    container_name: wp-debian12
+    hostname: wp-debian12
+    command: /lib/systemd/systemd
+    privileged: true
+    cgroup: host
+    security_opt:
+      - label=disable
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    ports:
+      - "8081:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "systemctl is-active multi-user.target"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  wp-ubuntu2204:
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    container_name: wp-ubuntu2204
+    hostname: wp-ubuntu2204
+    command: /lib/systemd/systemd
+    privileged: true
+    cgroup: host
+    security_opt:
+      - label=disable
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "systemctl is-active multi-user.target"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+  wp-rocky9:
+    image: geerlingguy/docker-rockylinux9-ansible:latest
+    container_name: wp-rocky9
+    hostname: wp-rocky9
+    command: /usr/lib/systemd/systemd
+    privileged: true
+    cgroup: host
+    security_opt:
+      - label=disable
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    ports:
+      - "8083:80"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "systemctl is-active multi-user.target"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s

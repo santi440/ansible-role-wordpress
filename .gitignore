@@ -1,0 +1,8 @@
+# Secrets generados por el rol wordpress (wp-config.php)
+files/salts/
+
+# Cache local de ansible-lint
+.ansible/
+
+# Estado efímero de molecule
+.molecule/

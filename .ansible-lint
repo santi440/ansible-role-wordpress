@@ -1,0 +1,10 @@
+---
+profile: production
+
+exclude_paths:
+  - roles/geerlingguy.mysql/
+  - molecule/
+  - .ansible/
+  - .cache/
+  - .venv/
+  - .direnv/

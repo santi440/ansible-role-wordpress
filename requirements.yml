@@ -1,0 +1,11 @@
+---
+roles:
+  - name: geerlingguy.mysql
+    version: "6.5.0"
+
+collections:
+  - name: ansible.posix
+  - name: community.docker
+  - name: community.general
+  # geerlingguy.mysql usa mysql_user/mysql_db, que viven en community.mysql.
+  - name: community.mysql

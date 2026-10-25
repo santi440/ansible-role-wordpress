@@ -1,0 +1,132 @@
+---
+# Playbook de verificación del role. Se ejecuta con:
+#   ansible-playbook playbooks/verify.yml
+# o desde molecule:
+#   - import_role: { name: wordpress, tasks_from: verify.yml }
+
+- name: Reunir el estado de los servicios
+  ansible.builtin.service_facts:
+
+- name: Verificar que el servidor web esté activo
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services[wordpress_service ~ '.service'].state | default('') == 'running'
+    fail_msg: "{{ wordpress_service }} no está corriendo"
+    success_msg: "{{ wordpress_service }} está activo"
+
+- name: Listar los módulos cargados por Apache
+  ansible.builtin.command: "{{ 'apache2ctl' if ansible_facts.os_family == 'Debian' else 'httpd' }} -M"
+  register: wordpress_apache_loaded_modules
+  changed_when: false
+
+- name: Verificar que Apache cargue PHP embebido (Debian)
+  ansible.builtin.assert:
+    that:
+      - "'php_module' in wordpress_apache_loaded_modules.stdout"
+    fail_msg: "Apache no tiene cargado el módulo de PHP"
+    success_msg: "Apache cargó el módulo de PHP"
+  when: ansible_facts.os_family == 'Debian'
+
+- name: Verificar que Apache pueda hablar con php-fpm (RedHat)
+  ansible.builtin.assert:
+    that:
+      - "'proxy_fcgi_module' in wordpress_apache_loaded_modules.stdout"
+    fail_msg: "Apache no tiene cargado proxy_fcgi"
+    success_msg: "Apache cargó proxy_fcgi para php-fpm"
+  when: ansible_facts.os_family == 'RedHat'
+
+- name: Verificar que php-fpm esté activo (RedHat)
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services[wordpress_php_fpm_service ~ '.service'].state | default('') == 'running'
+    fail_msg: "{{ wordpress_php_fpm_service }} no está corriendo"
+    success_msg: "{{ wordpress_php_fpm_service }} está activo"
+  when: wordpress_php_fpm_service | length > 0
+
+- name: Verificar que el módulo rewrite esté habilitado
+  ansible.builtin.assert:
+    that:
+      - "'rewrite_module' in wordpress_apache_loaded_modules.stdout"
+    fail_msg: "El módulo rewrite de Apache no está habilitado"
+    success_msg: "El módulo rewrite de Apache está habilitado"
+  when: wordpress_apache_modules | length > 0
+
+- name: Leer el virtual host
+  ansible.builtin.slurp:
+    path: "{{ wordpress_vhost_path }}"
+  register: wordpress_vhost
+
+- name: Verificar el contenido del virtual host
+  ansible.builtin.assert:
+    that:
+      - ("ServerName " ~ wordpress_domain) in (wordpress_vhost.content | b64decode)
+      - ("DocumentRoot " ~ wordpress_install_dir) in (wordpress_vhost.content | b64decode)
+    fail_msg: "El virtual host no contiene ServerName/DocumentRoot esperados"
+    success_msg: "Virtual host configurado para {{ wordpress_domain }}"
+
+- name: Verificar el enlace del sitio en Debian
+  ansible.builtin.stat:
+    path: "{{ wordpress_vhost_link }}"
+  register: wordpress_vhost_link_stat
+  when: wordpress_vhost_link | length > 0
+
+- name: Validar el enlace del sitio
+  ansible.builtin.assert:
+    that:
+      - wordpress_vhost_link_stat.stat.exists
+    fail_msg: "No existe el enlace {{ wordpress_vhost_link }}"
+    success_msg: "Sitio habilitado en {{ wordpress_vhost_link }}"
+  when: wordpress_vhost_link | length > 0
+
+- name: Verificar que el núcleo de WordPress esté descomprimido
+  ansible.builtin.stat:
+    path: "{{ wordpress_install_dir }}/wp-settings.php"
+  register: wordpress_core
+
+- name: Validar el núcleo de WordPress
+  ansible.builtin.assert:
+    that:
+      - wordpress_core.stat.exists
+    fail_msg: "No se encontró {{ wordpress_install_dir }}/wp-settings.php"
+    success_msg: "WordPress descomprimido en {{ wordpress_install_dir }}"
+
+- name: Leer wp-config.php
+  ansible.builtin.slurp:
+    path: "{{ wordpress_install_dir }}/wp-config.php"
+  register: wordpress_config
+  no_log: true
+
+- name: Verificar el contenido de wp-config.php
+  ansible.builtin.assert:
+    that:
+      - ("'DB_NAME', '" ~ wordpress_db_name ~ "'") in (wordpress_config.content | b64decode)
+      - ("'DB_USER', '" ~ wordpress_db_user ~ "'") in (wordpress_config.content | b64decode)
+      - "'AUTH_KEY' in wordpress_config.content | b64decode"
+      - "'wp-settings.php' in wordpress_config.content | b64decode"
+    fail_msg: "wp-config.php no contiene los valores esperados"
+    success_msg: "wp-config.php contiene base de datos, sales y bootstrap"
+  no_log: true
+
+- name: Verificar que WordPress responda por HTTP
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ wordpress_http_port }}/"
+    headers:
+      Host: "{{ wordpress_domain }}"
+    status_code: [200, 302]
+    # WordPress recién instalado responde 302 hacia /wp-admin/install.php con
+    # Location apuntando al dominio del sitio, que no resuelve dentro del
+    # contenedor: no hay que seguir el redirect, la respuesta ya es la prueba
+    # de que Apache y PHP están sirviendo la aplicación.
+    follow_redirects: none
+    return_content: true
+  register: wordpress_http
+
+- name: Verificar que la respuesta sea de WordPress
+  ansible.builtin.assert:
+    that:
+      - >-
+        'wordpress' in (wordpress_http.content | lower)
+        or 'wordpress' in (wordpress_http.location | default('') | lower)
+        or (wordpress_http.x_redirect_by | default('') | lower) == 'wordpress'
+    fail_msg: "La respuesta HTTP no parece ser WordPress"
+    success_msg: "WordPress responde correctamente en el puerto {{ wordpress_http_port }}"

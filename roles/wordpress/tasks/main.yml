@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT-0
+---
+# tasks file for roles/wordpress
+- name: Instalar requisitos de WordPress
+  ansible.builtin.import_tasks: install.yml
+
+- name: Configurar WordPress
+  ansible.builtin.import_tasks: configure.yml

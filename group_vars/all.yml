@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT-0
+---
+# Credenciales de WordPress.
+# En un entorno real: encriptar con ansible-vault.
+wordpress_db_name: wordpress
+wordpress_db_user: wp_user
+wordpress_db_password: change_me
+wordpress_db_host: localhost
+
+# Configuración del rol geerlingguy.mysql.
+mysql_databases:
+  - name: "{{ wordpress_db_name }}"
+mysql_users:
+  - name: "{{ wordpress_db_user }}"
+    password: "{{ wordpress_db_password }}"
+    priv: "{{ wordpress_db_name }}.*:ALL"
+mysql_hide_passwords: true

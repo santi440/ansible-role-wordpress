@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT-0
+---
+# handlers file for roles/wordpress
+- name: Reiniciar web server
+  ansible.builtin.service:
+    name: "{{ wordpress_service }}"
+    state: restarted

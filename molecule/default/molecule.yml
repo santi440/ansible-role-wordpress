@@ -1,0 +1,65 @@
+---
+dependency:
+  name: galaxy
+  options:
+    # Relativo al directorio del escenario (molecule/default/)
+    requirements-file: ../../requirements.yml
+driver:
+  name: docker
+platforms:
+  - name: ubuntu-2204
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
+    pre_build_image: true
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    tmpfs:
+      - /run
+      - /tmp
+  - name: debian-12
+    image: geerlingguy/docker-debian12-ansible:latest
+    pre_build_image: true
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    tmpfs:
+      - /run
+      - /tmp
+  - name: rockylinux-9
+    image: geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true
+    privileged: true
+    command: /usr/sbin/init
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    tmpfs:
+      - /run
+      - /tmp
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        wordpress_db_name: wordpress
+        wordpress_db_user: wordpress
+        wordpress_db_password: wordpress
+        wordpress_db_host: 127.0.0.1
+        wordpress_domain: wordpress.local
+        wordpress_http_port: 80
+        mysql_root_password: root
+        mysql_databases:
+          - name: wordpress
+            encoding: utf8mb4
+            collation: utf8mb4_unicode_ci
+        mysql_users:
+          - name: wordpress
+            host: "%"
+            password: wordpress
+            priv: "wordpress.*:ALL"
+verifier:
+  name: ansible

@@ -1,0 +1,9 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Ejecutar las verificaciones del role
+      ansible.builtin.import_role:
+        name: wordpress
+        tasks_from: verify.yml

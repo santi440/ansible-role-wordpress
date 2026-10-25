@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT-0
+---
+- name: Generar wp-config.php
+  ansible.builtin.template:
+    src: wp-config.php.j2
+    dest: "{{ wordpress_install_dir }}/wp-config.php"
+    owner: "{{ wordpress_web_user }}"
+    group: "{{ wordpress_web_user }}"
+    mode: "0640"
+
+- name: Configurar el virtual host
+  ansible.builtin.template:
+    src: vhost.conf.j2
+    dest: "{{ wordpress_vhost_path }}"
+    mode: "0644"
+  notify: Reiniciar web server
+
+- name: Habilitar módulos Apache requeridos
+  community.general.apache2_module:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ wordpress_apache_modules }}"
+  when: wordpress_apache_modules | length > 0
+  notify: Reiniciar web server
+
+- name: Deshabilitar el sitio por defecto
+  ansible.builtin.command: "a2dissite {{ wordpress_default_site }}"
+  args:
+    removes: "/etc/apache2/sites-enabled/{{ wordpress_default_site }}.conf"
+  when: wordpress_default_site | length > 0
+  notify: Reiniciar web server
+
+- name: Habilitar sitio wordpress
+  ansible.builtin.command: a2ensite wordpress
+  args:
+    creates: "{{ wordpress_vhost_link }}"
+  when: wordpress_vhost_link | length > 0
+  notify: Reiniciar web server
+
+- name: Habilitar y arrancar php-fpm
+  ansible.builtin.service:
+    name: "{{ wordpress_php_fpm_service }}"
+    state: started
+    enabled: true
+  when: wordpress_php_fpm_service | length > 0
+
+- name: Habilitar y arrancar el web server
+  ansible.builtin.service:
+    name: "{{ wordpress_service }}"
+    state: started
+    enabled: true
+
+- name: Permitir conexión a BD desde httpd (SELinux)
+  ansible.posix.seboolean:
+    name: httpd_can_network_connect_db
+    state: true
+    persistent: true
+  when: ansible_facts.get('selinux', {}).get('status', 'disabled') == 'enabled'

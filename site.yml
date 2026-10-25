@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT-0
+---
+# Playbook de WordPress.
+#
+# Se separan dos plays con tags independientes:
+#   - db   : instala y configura la base de datos (rol geerlingguy.mysql).
+#   - web  : prepara el web server e instala WordPress (rol propio wordpress).
+#
+# Ejemplos:
+#   ansible-playbook -i inventory.ini site.yml                 # todo
+#   ansible-playbook -i inventory.ini site.yml --tags db       # sólo BD
+#   ansible-playbook -i inventory.ini site.yml --tags web      # sólo web
+#
+# Asume esquema de un solo nodo (web + BD en el mismo host), por eso ambos
+# play apuntan al mismo grupo `wordpress`. Para separar web y BD, cambiar el
+# `hosts:` de cada play y ajustar `wordpress_db_host`.
+
+- name: Instalar la base de datos
+  hosts: wordpress
+  become: true
+  tags:
+    - db
+  roles:
+    - role: geerlingguy.mysql
+
+- name: Preparar web server e instalar WordPress
+  hosts: wordpress
+  become: true
+  tags:
+    - web
+  roles:
+    - role: wordpress

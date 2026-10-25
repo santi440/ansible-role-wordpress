@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: MIT-0
+---
+# Valores por defecto del rol. Todos sobreescribibles desde inventory,
+# group_vars o --extra-vars.
+
+# Versión de WordPress. Fijarla hace la instalación reproducible.
+wordpress_version: "6.6.2"
+
+# Rutas
+wordpress_install_dir: /var/www/wordpress
+
+# Dominio del sitio
+wordpress_domain: localhost
+
+# Puerto HTTP donde escucha Apache
+wordpress_http_port: 80
+
+# Base de datos
+wordpress_db_name: wordpress
+wordpress_db_user: wp_user
+wordpress_db_password: "change_me"   # sobreescribir desde vault
+wordpress_db_host: localhost
+
+# Extensiones PHP extra (opcionales), se agregan tal cual.
+wordpress_php_extensions_extra: []
+
+# Configuración por familia de SO. Los defaults tienen la precedencia más baja,
+# así que todo esto es sobreescribible.
+#
+# `apache_modules`: módulos a habilitar antes de arrancar el web server.
+# `default_site`:   sitio por defecto a deshabilitar. En RedHat no aplica ("").
+#                   Vacío = no hay nada que deshabilitar.
+# `vhost_link`:     enlace del vhost en sites-enabled. En RedHat no aplica ("")
+#                   porque httpd ya lee todo /etc/httpd/conf.d automáticamente.
+wordpress_os_defaults:
+  Debian:
+    packages:
+      - apache2
+      - php
+      - libapache2-mod-php
+      - php-mysql
+      - php-curl
+      - php-gd
+      - php-mbstring
+      - php-xml
+      - php-zip
+      - php-intl
+      - unzip
+    service: apache2
+    php_fpm_service: ""
+    vhost_path: /etc/apache2/sites-available/wordpress.conf
+    web_user: www-data
+    apache_modules:
+      - rewrite
+    default_site: "000-default"
+    vhost_link: /etc/apache2/sites-enabled/wordpress.conf
+  RedHat:
+    packages:
+      - httpd
+      - php
+      - php-fpm
+      - php-mysqlnd
+      - php-gd
+      - php-mbstring
+      - php-xml
+      - php-intl
+      - php-curl
+      - unzip
+      - tar
+    service: httpd
+    php_fpm_service: php-fpm
+    vhost_path: /etc/httpd/conf.d/wordpress.conf
+    web_user: apache
+    apache_modules: []
+    default_site: ""
+    vhost_link: ""
+
+# Variables derivadas de la familia de SO.
+wordpress_packages: "{{ wordpress_os_defaults[ansible_facts.os_family].packages }}"
+wordpress_service: "{{ wordpress_os_defaults[ansible_facts.os_family].service }}"
+wordpress_php_fpm_service: "{{ wordpress_os_defaults[ansible_facts.os_family].php_fpm_service }}"
+wordpress_vhost_path: "{{ wordpress_os_defaults[ansible_facts.os_family].vhost_path }}"
+wordpress_web_user: "{{ wordpress_os_defaults[ansible_facts.os_family].web_user }}"
+wordpress_apache_modules: "{{ wordpress_os_defaults[ansible_facts.os_family].apache_modules }}"
+wordpress_default_site: "{{ wordpress_os_defaults[ansible_facts.os_family].default_site }}"
+wordpress_vhost_link: "{{ wordpress_os_defaults[ansible_facts.os_family].vhost_link }}"
