@@ -1,0 +1,5 @@
+ansible-core~=2.21
+ansible-lint~=26.10
+yamllint~=1.38
+molecule~=25.12
+molecule-plugins[docker]~=25.8
